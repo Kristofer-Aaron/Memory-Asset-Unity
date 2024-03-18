@@ -6,6 +6,9 @@ public class valasztas : MonoBehaviour
 {
     private Quaternion originalRotation;
     private Quaternion targetRotation;
+    private Vector3 originalPosition;
+    private Vector3 targetPosition;
+
     private bool isSelected = false;
     public bool isWaiting = false;
     public float rotationAngle = 180f;
@@ -16,50 +19,40 @@ public class valasztas : MonoBehaviour
     private void Start()
     {        
         originalRotation = transform.rotation;
-        targetRotation = Quaternion.Euler(transform.rotation.eulerAngles + Vector3.left * rotationAngle + Vector3.up * rotationAngle);        
+        targetRotation = Quaternion.Euler(transform.rotation.eulerAngles + Vector3.left * rotationAngle + Vector3.up * rotationAngle);
+        originalPosition = transform.position;
+        targetPosition = new Vector3(transform.position[0], transform.position[1]+0.3f, transform.position[2]);
     }
-    public void pontvalt(int p = 0){        
+    public void pontvalt(int p = 0) {        
         GameObject.Find("Pontok").GetComponent<TMPro.TextMeshProUGUI>().text = p+"";
     }
     private void OnMouseDown()
     {
-        if (!isWaiting)
-        {
-            if (isSelected)
-            {
-                UnselectCard();
-            }
-            else
-            {
-                int selectedCardCount = CountSelectedCards();
-                if (selectedCardCount < 2)
+        if (!isWaiting && !isSelected) {
+            int selectedCardCount = CountSelectedCards();
+            if (selectedCardCount < 2) {
+                SelectCard();
+                if (selectedCardCount == 1)
                 {
-                    SelectCard();
-                    if (selectedCardCount == 1)
-                    {
-                        firstSelectedCard = this;
-                        StartCoroutine(WaitAndUnselect());
-                    }
+                    firstSelectedCard = this;
+                    StartCoroutine(WaitAndUnselect());
                 }
             }
         }
     }
 
-private void SelectCard()
-    {
+    private void SelectCard() {
         // Smoothly rotate the card
-        StartCoroutine(RotateCard(targetRotation));
+        StartCoroutine(FlipCard(targetRotation,targetPosition));
         isSelected = true;
     }
 
-    private void UnselectCard()
-    {
+    private void UnselectCard() {
         // Smoothly rotate the card back to its original rotation
-        StartCoroutine(RotateCard(originalRotation));
+        StartCoroutine(FlipCard(originalRotation, targetPosition));
         isSelected = false;
     }
-    private int CountSelectedCards()
-    {
+    private int CountSelectedCards() {
         int count = 0;
         valasztas[] cards = FindObjectsOfType<valasztas>();
         foreach (valasztas card in cards)
@@ -72,8 +65,7 @@ private void SelectCard()
         return count;
     }
 
-    private IEnumerator WaitAndUnselect()
-    {
+    private IEnumerator WaitAndUnselect() {
         isWaiting = true;
         yield return new WaitForSeconds(1f);
         isWaiting = false;
@@ -87,7 +79,7 @@ private void SelectCard()
                 {
                     Destroy(firstSelectedCard.gameObject);
                     Destroy(card.gameObject);
-                    this.pontvalt(999);
+                    this.pontvalt(int.Parse(GameObject.Find("Pontok").GetComponent<TMPro.TextMeshProUGUI>().text)+1);
                 }
                 else
                 {
@@ -97,22 +89,35 @@ private void SelectCard()
             }
         }
     }
-private IEnumerator RotateCard(Quaternion targetRotation)
+    private IEnumerator FlipCard(Quaternion targetRotation, Vector3 targetPosition)
     {
         float elapsedTime = 0f;
         Quaternion startRotation = transform.rotation;
+        Vector3 startPosition = transform.position;
 
         while (elapsedTime < 1f)
         {
+            transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime * 4f);
             transform.rotation = Quaternion.Lerp(startRotation, targetRotation, elapsedTime);
             elapsedTime += Time.deltaTime * smoothness;
             yield return null;
         }
 
-        // Ensure final rotation is exact
+        // Ensure final values are exact
         transform.rotation = targetRotation;
+        elapsedTime = 0f;
+        while (elapsedTime < 1f)
+        {
+            transform.position = Vector3.Lerp(targetPosition, startPosition, elapsedTime * 4f);
+            elapsedTime += Time.deltaTime * smoothness;
+            yield return null;
+        }
+        transform.position = startPosition;
     }
-    private bool HaveSameParent(Transform obj1, Transform obj2)
+
+
+
+        private bool HaveSameParent(Transform obj1, Transform obj2)
     {
         return obj1.parent == obj2.parent;
     }

@@ -1,0 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
+using TreeEditor;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class kameramenumozgas : MonoBehaviour
+{
+    public Transform target;
+
+    public float smoothSpeed = 0.125f;
+    public Vector3 offset;
+
+    void LateUpdate()
+    {
+            
+    }
+}
